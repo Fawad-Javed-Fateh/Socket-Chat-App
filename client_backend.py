@@ -4,13 +4,6 @@ from socket import *
 connectionFlag = False
 client1 = socket()
 
-# while(1):  
-#     msg=client.recv(1024).decode()
-#     print('Recived from the server :',str(msg))
-#     msgToServer=input("Enter msg to send to the server :")
-#     client.send(bytes(str(msgToServer),'utf-8'))
-#     print("Data sent to server")
-
 def connectServer(ip, portNo):
     global client1
     client1.connect((ip,portNo))

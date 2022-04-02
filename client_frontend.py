@@ -5,6 +5,7 @@ from tkinter import *
 from socket import *
 from socket import inet_aton
 import client_backend
+from threading import Thread
 
 class Lotfi(tk.Entry):
     def __init__(self, master=None, **kwargs):
@@ -36,38 +37,43 @@ def connectButton():
             return
         client_backend.connectServer(inp,int(inp1))
         connection_text['text'] = 'Connected'
-
-        keepReceiving()
+        receive_thread.start()
 
     except OSError:
         tk.messagebox.showerror("Error", "Invalid IP Address.")
 
-def keepReceiving():
+def receiving():
     while(1):
         msgReceived= None
         msgReceived = client_backend.receiveMessage()
 
         if msgReceived != None:
             received_text['text'] = msgReceived
+        else:
+            print("nothing to print")
 
 def sendButton():
     print('send clicked')
+    send_thread = Thread(target=sending)
+    send_thread.start()
+    
+def sending():
     inp = MessageInput.get()
 
     if len(inp) == 0 or client_backend.connectionFlag == False:
         return
 
     client_backend.sendMessage(inp)
-    keepReceiving()
 
 if __name__ == "__main__":
     root = Tk()
-
+    
     # This is the section of code which creates the main window
     root.geometry('580x410')
     root.configure(background='#F0F8FF')
     root.title('Messenger Client')
-
+    canvas = Canvas(background='#F0F8FF', highlightthickness=1, highlightbackground="grey")
+    canvas.place(x=27, y=115, width=525, height=120)
 
     # This is the section of code which creates the a label
     Label(root, text='Enter IP Address:', bg='#F0F8FF', font=('arial', 12, 'normal')).place(x=50, y=32)
@@ -92,8 +98,11 @@ if __name__ == "__main__":
 
     # This is the section of code which creates the a label
     received_text = Label(root, text='', bg='#F0F8FF', font=('arial', 12, 'normal'))
-    received_text.place(x=27, y=90)
+    received_text.place(x=30, y=120)
     connection_text = Label(root, text='Not Connected', bg='#F0F8FF', font=('arial', 12, 'normal'))
     connection_text.place(x=440, y=40)
+    Label(root, text='Incoming Message:', bg='#F0F8FF', font=('arial', 12, 'normal')).place(x=27, y=90)
+
+    receive_thread = Thread(target=receiving)
 
     root.mainloop()
