@@ -1,57 +1,99 @@
 import tkinter as tk
 from tkinter import ttk
+from tkinter import messagebox
 from tkinter import * 
+from socket import *
+from socket import inet_aton
+import client_backend
 
-# this is a function to get the user input from the text input box
-def getInputBoxValue():
-	userInput = portInput.get()
-	return userInput
+class Lotfi(tk.Entry):
+    def __init__(self, master=None, **kwargs):
+        self.var = tk.StringVar()
+        tk.Entry.__init__(self, master, textvariable=self.var, **kwargs)
+        self.old_value = ''
+        self.var.trace('w', self.check)
+        self.get, self.set = self.var.get, self.var.set
+
+    def check(self, *args):
+        if self.get().isdigit(): 
+            # the current value is only digits; allow this
+            self.old_value = self.get()
+        else:
+            # there's non-digit characters in the input; reject this 
+            self.set(self.old_value)
 
 
 # this is the function called when the button is clicked
 def connectButton():
-	print('clicked')
+    print('connect clicked')
+    inp = ipInput.get()
+    inp1 = portInput.get()
+
+    try:
+        inet_aton(inp)
+        if len(inp1) != 4:
+            tk.messagebox.showerror("Error", "Invalid Port Number")
+            return
+        client_backend.connectServer(inp,int(inp1))
+        connection_text['text'] = 'Connected'
+
+        keepReceiving()
+
+    except OSError:
+        tk.messagebox.showerror("Error", "Invalid IP Address.")
+
+def keepReceiving():
+    while(1):
+        msgReceived= None
+        msgReceived = client_backend.receiveMessage()
+
+        if msgReceived != None:
+            received_text['text'] = msgReceived
 
 def sendButton():
-	print('send clicked')
+    print('send clicked')
+    inp = MessageInput.get()
+
+    if len(inp) == 0 or client_backend.connectionFlag == False:
+        return
+
+    client_backend.sendMessage(inp)
+    keepReceiving()
+
+if __name__ == "__main__":
+    root = Tk()
+
+    # This is the section of code which creates the main window
+    root.geometry('580x410')
+    root.configure(background='#F0F8FF')
+    root.title('Messenger Client')
 
 
-# this is a function to get the user input from the text input box
-def getInputBoxValue():
-	userInput = MessageInput.get()
-	return userInput
+    # This is the section of code which creates the a label
+    Label(root, text='Enter IP Address:', bg='#F0F8FF', font=('arial', 12, 'normal')).place(x=50, y=32)
+    Label(root, text='Port Number:', bg='#F0F8FF', font=('arial', 12, 'normal')).place(x=80, y=60)
 
-root = Tk()
+    # This is the section of code which creates a text input box
+    ipInput=Entry(root)
+    ipInput.place(x=177, y=32, width=150)
 
-# This is the section of code which creates the main window
-root.geometry('580x410')
-root.configure(background='#F0F8FF')
-root.title('Messenger Client')
-
-
-# This is the section of code which creates the a label
-Label(root, text='Enter IP Address:', bg='#F0F8FF', font=('arial', 12, 'normal')).place(x=50, y=32)
-Label(root, text='Port Number:', bg='#F0F8FF', font=('arial', 12, 'normal')).place(x=80, y=60)
-
-# This is the section of code which creates a text input box
-ipInput=Entry(root)
-ipInput.place(x=177, y=32, width=150)
-
-portInput=Entry(root)
-portInput.place(x=177, y=60, width=150)
+    portInput=Lotfi(root)
+    portInput.place(x=177, y=60, width=150)
 
 
-# This is the section of code which creates a button
-Button(root, text='Connect', bg='#00CED1', font=('arial', 12, 'normal'), command=connectButton).place(x=347, y=38)
-Button(root, text='Send', bg='#00CED1', font=('arial', 12, 'normal'), command=sendButton, width=10).place(x=452, y=370)
+    # This is the section of code which creates a button
+    Button(root, text='Connect', bg='#00CED1', font=('arial', 12, 'normal'), command=connectButton).place(x=347, y=38)
+    Button(root, text='Send', bg='#00CED1', font=('arial', 12, 'normal'), command=sendButton, width=10).place(x=452, y=370)
 
-# This is the section of code which creates a text input box
-MessageInput=Entry(root, width=58, font=('Arial 12'))
-MessageInput.place(x=27, y=242, height=120)
-
-
-# This is the section of code which creates the a label
-Label(root, text='', bg='#F0F8FF', font=('arial', 12, 'normal')).place(x=27, y=90)
+    # This is the section of code which creates a text input box
+    MessageInput=Entry(root, width=58, font=('Arial 12'))
+    MessageInput.place(x=27, y=242, height=120)
 
 
-root.mainloop()
+    # This is the section of code which creates the a label
+    received_text = Label(root, text='', bg='#F0F8FF', font=('arial', 12, 'normal'))
+    received_text.place(x=27, y=90)
+    connection_text = Label(root, text='Not Connected', bg='#F0F8FF', font=('arial', 12, 'normal'))
+    connection_text.place(x=440, y=40)
+
+    root.mainloop()
